@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "omarchy.island",
+  "name": "Omarchy Island",
+  "version": "0.1.0",
+  "author": "Omarchy",
+  "description": "Quickbar activity surface for live system state",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Omarchy Island",
+    "description": "Live activity status attached to the quickbar",
+    "category": "Status",
+    "defaultSection": "center",
+    "allowMultiple": false
+  }
+}

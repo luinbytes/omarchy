@@ -18,6 +18,7 @@ ShellRoot {
   property PluginRegistry pluginRegistry: PluginRegistry { }
   property BarWidgetRegistry barWidgetRegistry: BarWidgetRegistry { }
   property AppLibrary appLibrary: AppLibrary { }
+  property ActivityBroker activityBroker: ActivityBroker { }
 
   property string home: Quickshell.env("HOME")
 
@@ -271,6 +272,8 @@ ShellRoot {
   }
 
   property var _services: ({})
+  property var _serviceLoads: ({})
+  property int _serviceLoadEpoch: 0
 
   function serviceFor(pluginId) {
     return _services[String(pluginId)] || null
@@ -278,6 +281,13 @@ ShellRoot {
 
   function firstPartyServiceFor(pluginId) {
     return serviceFor(pluginId)
+  }
+
+  function clearServiceLoad(key, load) {
+    if (_serviceLoads[key] !== load) return
+    var next = ({})
+    for (var id in _serviceLoads) if (id !== key) next[id] = _serviceLoads[id]
+    _serviceLoads = next
   }
 
   function ensureService(pluginId) {
@@ -291,15 +301,39 @@ ShellRoot {
     var url = pluginRegistry.entryPointUrl(manifest, "service")
     if (!url) return null
 
+    var existingLoad = _serviceLoads[key]
+    if (existingLoad && existingLoad.epoch === _serviceLoadEpoch && existingLoad.url === url) return null
+
     var comp = Qt.createComponent(url, Component.PreferSynchronous)
+    var load = { epoch: _serviceLoadEpoch, url: url, component: comp }
+    var pending = ({})
+    for (var pendingId in _serviceLoads) pending[pendingId] = _serviceLoads[pendingId]
+    pending[key] = load
+    _serviceLoads = pending
     function finalize() {
-      if (comp.status !== Component.Ready) {
-        console.warn("service plugin load failed for " + key + ": " + comp.errorString())
+      var currentManifest = pluginRegistry && pluginRegistry.installedPlugins
+        ? pluginRegistry.installedPlugins[key] : null
+      var currentUrl = currentManifest ? pluginRegistry.entryPointUrl(currentManifest, "service") : ""
+      var currentService = currentManifest
+        && Array.isArray(currentManifest.kinds)
+        && currentManifest.kinds.indexOf("service") !== -1
+        && currentManifest.entryPoints
+        && currentManifest.entryPoints.service
+        && pluginRegistry.isEnabled(key)
+      if (_serviceLoads[key] !== load || load.epoch !== _serviceLoadEpoch || load.url !== currentUrl || !currentService || _services[key]) {
+        shell.clearServiceLoad(key, load)
         return
       }
-      var inst = comp.createObject(serviceHost)
+      if (comp.status !== Component.Ready) {
+        console.warn("service plugin load failed for " + key + ": " + comp.errorString())
+        shell.clearServiceLoad(key, load)
+        return
+      }
+      var initialProperties = key === "omarchy.island" ? { activityBroker: shell.activityBroker } : ({})
+      var inst = comp.createObject(serviceHost, initialProperties)
       if (!inst) {
         console.warn("service plugin createObject returned null for", key)
+        shell.clearServiceLoad(key, load)
         return
       }
       if ("omarchyPath" in inst) inst.omarchyPath = shell.omarchyPath
@@ -311,6 +345,7 @@ ShellRoot {
       for (var sk in _services) snext[sk] = _services[sk]
       snext[key] = inst
       _services = snext
+      shell.clearServiceLoad(key, load)
     }
     if (comp.status === Component.Loading) {
       comp.statusChanged.connect(finalize)
@@ -364,6 +399,8 @@ ShellRoot {
   // Destroying omarchy.lock drops the ext-session-lock client while Hyprland
   // still holds the lock, which surfaces the crashed-lockscreen fallback.
   function unloadPluginServices() {
+    _serviceLoadEpoch += 1
+    _serviceLoads = ({})
     var next = ({})
     for (var existingId in _services) {
       if (serviceKeepLoaded(existingId)) {

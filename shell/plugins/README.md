@@ -20,6 +20,7 @@ User-installed plugins live alongside these conceptually but on disk under
 | Reminders     | `omarchy.reminders`       | `overlay`               | `reminders/ReminderFlow.qml`          |
 | Omarchy menu  | `omarchy.menu`            | `menu`, `bar-widget`    | `menu/Menu.qml`, `menu/BarWidget.qml` |
 | Notifications | `omarchy.notifications`   | `service`               | `notifications/Service.qml`           |
+| Island        | `omarchy.island`          | `service`, `bar-widget` | `island/Service.qml`, `island/BarWidget.qml` |
 | Audio         | `omarchy.audio`           | `bar-widget`            | `panels/audio/Panel.qml`              |
 | Bluetooth     | `omarchy.bluetooth`       | `bar-widget`            | `panels/bluetooth/Panel.qml`          |
 | Clock         | `omarchy.clock`           | `bar-widget`            | `panels/clock/BarWidget.qml`          |
@@ -40,6 +41,12 @@ User-installed plugins live alongside these conceptually but on disk under
 First-party bar-only widgets also carry manifests next to their QML files,
 e.g. `bar/widgets/Workspaces.manifest.json`. Rich popup widgets live in their
 own plugin directories, each with its own `manifest.json`.
+
+## Omarchy Island
+
+I1 supplies activity state and delivery without a visible renderer. The shell owns one `ActivityBroker`. `island/Service.qml` owns the single `IslandState` and its expiry timer. `island/BarWidget.qml` stays hidden and reserves no bar space, so the default layout does not change.
+
+The `omarchy-island-fixture` IPC target exposes fixed scenarios for disposable VM testing. It is not a public activity API and does not accept arbitrary activity payloads. Follow the [Omarchy Island verification guide](../../agents/skills/omarchy-island-verification/SKILL.md) for offline checks and the disposable VM procedure.
 
 ## Bar
 

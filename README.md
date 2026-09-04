@@ -4,6 +4,12 @@ Omarchy is a beautiful, fun & agentic Linux distribution by DHH.
 
 Read more at [omarchy.org](https://omarchy.org).
 
+## Omarchy Island I1
+
+This branch adds the first-party activity model, broker, service, and fixed QA fixture for Omarchy Island. I1 does not add a visible Island. Its hidden bar widget reserves no space, so the default bar remains unchanged.
+
+Read the [first-party plugin notes](shell/plugins/README.md#omarchy-island) for the component contract. Follow the [Omarchy Island verification guide](agents/skills/omarchy-island-verification/SKILL.md) to run the offline checks and disposable VM test.
+
 ## The Omarchy Manual
 
 The manual lives in [`manual/`](manual/), which is its authoritative source. It's
